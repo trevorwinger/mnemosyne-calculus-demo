@@ -41,7 +41,9 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 The PowerShell launcher uses `winget` to install Docker Desktop and Ollama if needed, starts both, then performs the same build and preprocessing steps. Docker Desktop needs WSL 2. If the script enables WSL, restart Windows when prompted and run the last two commands again. Complete any Docker Desktop first-run or license dialog before retrying.
 
-All launchers open [http://localhost:3000](http://localhost:3000) when ready.
+All launchers open [http://localhost:3100](http://localhost:3100) when ready. The demo intentionally uses web port `3100` and API port `8100`, so it can run alongside the original Mnemosyne development stack. PostgreSQL is private to Docker and is not exposed on a host port.
+
+To choose different free ports, set `MNEMOSYNE_WEB_PORT` and `MNEMOSYNE_API_PORT` before launching. For example on macOS/Linux: `MNEMOSYNE_WEB_PORT=3200 MNEMOSYNE_API_PORT=8200 ./bootstrap-demo.sh`.
 
 Use a different Ollama model with `MNEMOSYNE_MODEL=model-name ./bootstrap-demo.sh`.
 
@@ -88,7 +90,7 @@ Read [SECURITY_TESTING.md](SECURITY_TESTING.md) before sharing the prototype. It
 | `docker compose down` | Stop/remove containers while retaining data. |
 | `docker compose down -v` | **Delete the prototype database and private uploaded book.** |
 
-The default ports are web `3000`, API `8000`, and PostgreSQL `5432`. If Docker cannot access a package registry on a campus network, reconnect to a network that permits Docker Hub, npm, PyPI, and Ollama downloads, or configure Docker Desktop's proxy/certificates.
+The default ports are web `3100` and API `8100`; PostgreSQL is not exposed to the host. If Docker cannot access a package registry on a campus network, reconnect to a network that permits Docker Hub, npm, PyPI, and Ollama downloads, or configure Docker Desktop's proxy/certificates.
 
 ## Production boundary
 

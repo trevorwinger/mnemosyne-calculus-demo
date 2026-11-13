@@ -5,7 +5,9 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODEL_NAME="${MNEMOSYNE_MODEL:-gemma4:12b}"
-WEB_URL="http://localhost:3000"
+WEB_PORT="${MNEMOSYNE_WEB_PORT:-3100}"
+API_PORT="${MNEMOSYNE_API_PORT:-8100}"
+WEB_URL="http://localhost:$WEB_PORT"
 BUNDLED_TEXTBOOK_ARCHIVE="$ROOT_DIR/assets/apex-calculus-5e.pdf.zip"
 BUNDLED_TEXTBOOK_SHA256="98db405b9c7207f890cddf78e1406a34898099d300c338119194d4706d9ea8ce"
 PRIVATE_TEXTBOOK="$ROOT_DIR/.local-content/apex-novideo.pdf"
@@ -14,6 +16,13 @@ info() { printf '\n==> %s\n' "$*"; }
 fail() { printf '\nError: %s\n' "$*" >&2; exit 1; }
 DOCKER_CMD=(docker)
 docker_cmd() { "${DOCKER_CMD[@]}" "$@"; }
+
+ensure_port_available() {
+  local port="$1" label="$2"
+  if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1; then
+    fail "Port $port is already in use ($label). Choose another port, for example: MNEMOSYNE_${label}_PORT=3200 ./bootstrap-demo.sh"
+  fi
+}
 
 install_docker_macos() {
   local architecture download_dir disk_image mount_point
@@ -90,6 +99,8 @@ esac
 command -v curl >/dev/null 2>&1 || fail "curl is required to install and check Ollama."
 ensure_docker
 docker_cmd compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required. Update Docker Desktop/Engine, then rerun this script."
+ensure_port_available "$WEB_PORT" "WEB"
+ensure_port_available "$API_PORT" "API"
 
 case "$(uname -s)" in
   Darwin|Linux) ;;
@@ -137,18 +148,20 @@ elif [[ ! -f "$PRIVATE_TEXTBOOK" ]]; then
 fi
 
 export PROTOTYPE_DEFAULT_MODEL="$MODEL_NAME"
+export MNEMOSYNE_WEB_PORT="$WEB_PORT"
+export MNEMOSYNE_API_PORT="$API_PORT"
 cd "$ROOT_DIR"
 info "Building and starting Mnemosyne (first build can take several minutes)"
 docker_cmd compose up -d --build
 
 info "Waiting for the API"
 for attempt in $(seq 1 90); do
-  if curl --silent --fail --max-time 2 http://localhost:8000/health >/dev/null 2>&1; then
+  if curl --silent --fail --max-time 2 "http://localhost:$API_PORT/health" >/dev/null 2>&1; then
     break
   fi
   sleep 2
 done
-curl --silent --fail --max-time 3 http://localhost:8000/health >/dev/null 2>&1 || {
+curl --silent --fail --max-time 3 "http://localhost:$API_PORT/health" >/dev/null 2>&1 || {
   docker_cmd compose logs --tail=80 api >&2 || true
   fail "The API did not become ready."
 }

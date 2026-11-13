@@ -5,7 +5,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$WebUrl = "http://localhost:3000"
+$WebPort = if ($env:MNEMOSYNE_WEB_PORT) { $env:MNEMOSYNE_WEB_PORT } else { "3100" }
+$ApiPort = if ($env:MNEMOSYNE_API_PORT) { $env:MNEMOSYNE_API_PORT } else { "8100" }
+$WebUrl = "http://localhost:$WebPort"
 $Archive = Join-Path $RootDir "assets\apex-calculus-5e.pdf.zip"
 $ArchiveSha256 = "98DB405B9C7207F890CDDF78E1406A34898099D300C338119194D4706D9EA8CE"
 $PrivateContent = Join-Path $RootDir ".local-content"
@@ -33,6 +35,10 @@ function Wait-Http([string]$Url, [int]$Attempts = 90) {
 function Test-Docker {
     docker info 2>$null | Out-Null
     return ($LASTEXITCODE -eq 0)
+}
+function Test-PortAvailable([string]$Port, [string]$Name) {
+    $inUse = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if ($inUse) { throw "Port $Port is already in use ($Name). Choose another with `$env:MNEMOSYNE_${Name}_PORT = '3200' before running this script." }
 }
 
 Require-Winget
@@ -71,6 +77,8 @@ foreach ($Attempt in 1..90) {
 }
 docker compose version | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Docker Compose v2 is required." }
+Test-PortAvailable $WebPort "WEB"
+Test-PortAvailable $ApiPort "API"
 
 if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
     Install-Package "Ollama.Ollama" "Ollama"
@@ -95,10 +103,12 @@ Info "Unpacking the bundled APEX Calculus textbook"
 Expand-Archive -LiteralPath $Archive -DestinationPath $PrivateContent -Force
 
 $env:PROTOTYPE_DEFAULT_MODEL = $Model
+$env:MNEMOSYNE_WEB_PORT = $WebPort
+$env:MNEMOSYNE_API_PORT = $ApiPort
 Set-Location $RootDir
 Info "Building and starting Mnemosyne"
 docker compose up -d --build
-Wait-Http "http://localhost:8000/health"
+Wait-Http "http://localhost:$ApiPort/health"
 Info "Preprocessing and seeding Calculus materials"
 docker compose exec -T api python -m app.seed
 Wait-Http $WebUrl 60
