@@ -2,11 +2,13 @@
 
 Mnemosyne is a shareable, single-interface demonstration of course-scoped tutoring. It opens directly into **Alex**, one fictional **MATH-240 Calculus I** student's chat, with cited Calculus material and a course-scope harness. There is no account selection, course dashboard, instructor tool, or course-administration path.
 
-Use this branch to let colleagues evaluate the student experience and attempt to bypass its course, source, and solution-boundary protections. It is a demonstration environment, not a production student-data system.
+Use this repository to let colleagues evaluate the student experience and attempt to bypass its course, source, and solution-boundary protections. It is a demonstration environment, not a production student-data system.
 
-## One-command quick start
+## Quick start by operating system
 
-Prerequisites: Git and a running [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine with the Compose plugin on Linux). Node.js is **not** required on the host. Docker Desktop is the one prerequisite kept manual because its installation and first launch require operating-system-specific permissions and acceptance screens.
+You need **Git** to clone the repository. Node.js is **not** required. The launchers install Docker and Ollama if they are absent, download `gemma4:12b`, verify/unpack the bundled textbook, build the local services, then open the demo. The first run needs several GB of free disk space and can take a while because Docker images and the model are downloaded.
+
+### macOS (Apple Silicon or Intel)
 
 ```sh
 git clone <the-repository-url-you-were-sent>
@@ -14,7 +16,32 @@ cd mnemosyne-calculus-demo
 ./bootstrap-demo.sh
 ```
 
-The script installs and starts [Ollama](https://ollama.com), downloads `gemma4:12b`, verifies and privately unpacks the bundled APEX textbook, builds the local images, starts the demo, and preprocesses the selected textbook sections. It opens [http://localhost:3000](http://localhost:3000) when ready. The first run can take several minutes because Docker images and the Gemma model must be downloaded.
+If Docker is not installed, the script downloads the official Docker Desktop disk image and asks for your macOS administrator password to install it. It starts Docker Desktop and accepts its license during installation. If macOS shows a security or system-extension prompt, complete it and rerun the script.
+
+### Linux (Ubuntu/Debian/Fedora and other systemd distributions)
+
+```sh
+git clone <the-repository-url-you-were-sent>
+cd mnemosyne-calculus-demo
+./bootstrap-demo.sh
+```
+
+If Docker is missing, the script uses Docker's official Linux convenience installer and requests `sudo`. It can finish the first run with `sudo docker`; sign out and back in afterwards so the added `docker` group membership takes effect for normal Docker commands.
+
+### Windows 10/11
+
+Open **PowerShell** (not Git Bash), then run:
+
+```powershell
+git clone <the-repository-url-you-were-sent>
+cd mnemosyne-calculus-demo
+Set-ExecutionPolicy -Scope Process Bypass
+.\bootstrap-demo.ps1
+```
+
+The PowerShell launcher uses `winget` to install Docker Desktop and Ollama if needed, starts both, then performs the same build and preprocessing steps. Docker Desktop needs WSL 2. If the script enables WSL, restart Windows when prompted and run the last two commands again. Complete any Docker Desktop first-run or license dialog before retrying.
+
+All launchers open [http://localhost:3000](http://localhost:3000) when ready.
 
 Use a different Ollama model with `MNEMOSYNE_MODEL=model-name ./bootstrap-demo.sh`.
 
@@ -53,7 +80,8 @@ Read [SECURITY_TESTING.md](SECURITY_TESTING.md) before sharing the prototype. It
 
 | Command | Purpose |
 | --- | --- |
-| `./bootstrap-demo.sh` | Install/start Ollama, pull Gemma, build, start, migrate, and seed. |
+| `./bootstrap-demo.sh` | macOS/Linux: install/start Docker and Ollama, pull Gemma, build, start, migrate, and seed. |
+| `.\bootstrap-demo.ps1` | Windows: install/start Docker Desktop and Ollama, pull Gemma, build, start, migrate, and seed. |
 | `docker compose up -d --build` | Build changed images and start services later. |
 | `docker compose stop` | Stop services while retaining prototype data. |
 | `docker compose logs -f` | Follow service logs. |

@@ -12,6 +12,71 @@ PRIVATE_TEXTBOOK="$ROOT_DIR/.local-content/apex-novideo.pdf"
 
 info() { printf '\n==> %s\n' "$*"; }
 fail() { printf '\nError: %s\n' "$*" >&2; exit 1; }
+DOCKER_CMD=(docker)
+docker_cmd() { "${DOCKER_CMD[@]}" "$@"; }
+
+install_docker_macos() {
+  local architecture download_dir disk_image mount_point
+  architecture="$(uname -m)"
+  case "$architecture" in
+    arm64) architecture="arm64" ;;
+    x86_64) architecture="amd64" ;;
+    *) fail "Unsupported macOS architecture: $architecture" ;;
+  esac
+  command -v hdiutil >/dev/null 2>&1 || fail "hdiutil is required to install Docker Desktop on macOS."
+  download_dir="$(mktemp -d)"
+  disk_image="$download_dir/Docker.dmg"
+  mount_point="$download_dir/Docker"
+  mkdir -p "$mount_point"
+  info "Installing Docker Desktop for macOS (administrator approval is required)"
+  curl -fL "https://desktop.docker.com/mac/main/$architecture/Docker.dmg" -o "$disk_image"
+  hdiutil attach "$disk_image" -nobrowse -mountpoint "$mount_point" >/dev/null
+  sudo "$mount_point/Docker.app/Contents/MacOS/install" --accept-license --user "$(id -un)"
+  hdiutil detach "$mount_point" >/dev/null
+  rm -rf "$download_dir"
+}
+
+install_docker_linux() {
+  command -v sudo >/dev/null 2>&1 || fail "Docker Engine installation on Linux requires sudo."
+  info "Installing Docker Engine and Docker Compose for Linux (administrator approval is required)"
+  curl -fsSL https://get.docker.com | sudo sh
+  sudo usermod -aG docker "$USER" || true
+  sudo systemctl enable --now docker 2>/dev/null || true
+}
+
+ensure_docker() {
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    return
+  fi
+
+  case "$(uname -s)" in
+    Darwin)
+      if ! command -v docker >/dev/null 2>&1; then
+        install_docker_macos
+      fi
+      info "Starting Docker Desktop"
+      open -a Docker >/dev/null 2>&1 || fail "Docker Desktop was installed but could not be launched. Open it from Applications, then rerun this script."
+      ;;
+    Linux)
+      if ! command -v docker >/dev/null 2>&1; then
+        install_docker_linux
+      fi
+      if ! docker info >/dev/null 2>&1 && sudo docker info >/dev/null 2>&1; then
+        DOCKER_CMD=(sudo docker)
+      fi
+      ;;
+    *) fail "Use bootstrap-demo.ps1 on Windows. Automatic Docker installation from this shell is supported only on macOS and Linux." ;;
+  esac
+
+  info "Waiting for Docker"
+  for attempt in $(seq 1 90); do
+    if docker_cmd info >/dev/null 2>&1; then
+      return
+    fi
+    sleep 2
+  done
+  fail "Docker did not become ready. On Linux, sign out and back in after installation, then rerun. On macOS, complete Docker Desktop's first-run setup and rerun."
+}
 
 case "${1:-}" in
   -h|--help)
@@ -23,9 +88,8 @@ case "${1:-}" in
 esac
 
 command -v curl >/dev/null 2>&1 || fail "curl is required to install and check Ollama."
-command -v docker >/dev/null 2>&1 || fail "Install Docker Desktop (macOS/Windows) or Docker Engine with the Compose plugin (Linux), start it, then rerun this script."
-docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required. Update Docker Desktop/Engine, then rerun this script."
-docker info >/dev/null 2>&1 || fail "Docker is installed but its daemon is not running. Start Docker Desktop, wait for it to finish starting, then rerun this script."
+ensure_docker
+docker_cmd compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required. Update Docker Desktop/Engine, then rerun this script."
 
 case "$(uname -s)" in
   Darwin|Linux) ;;
@@ -75,7 +139,7 @@ fi
 export PROTOTYPE_DEFAULT_MODEL="$MODEL_NAME"
 cd "$ROOT_DIR"
 info "Building and starting Mnemosyne (first build can take several minutes)"
-docker compose up -d --build
+docker_cmd compose up -d --build
 
 info "Waiting for the API"
 for attempt in $(seq 1 90); do
@@ -85,12 +149,12 @@ for attempt in $(seq 1 90); do
   sleep 2
 done
 curl --silent --fail --max-time 3 http://localhost:8000/health >/dev/null 2>&1 || {
-  docker compose logs --tail=80 api >&2 || true
+  docker_cmd compose logs --tail=80 api >&2 || true
   fail "The API did not become ready."
 }
 
 info "Seeding the Calculus course"
-docker compose exec -T api python -m app.seed
+docker_cmd compose exec -T api python -m app.seed
 
 info "Waiting for the web app"
 for attempt in $(seq 1 60); do
@@ -100,7 +164,7 @@ for attempt in $(seq 1 60); do
   sleep 2
 done
 curl --silent --fail --max-time 3 "$WEB_URL" >/dev/null 2>&1 || {
-  docker compose logs --tail=80 web >&2 || true
+  docker_cmd compose logs --tail=80 web >&2 || true
   fail "The web app did not become ready."
 }
 
