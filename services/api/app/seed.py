@@ -61,6 +61,16 @@ def seed_apex_sources(db, course):
         for section, title, module, text in DEMO_CALC_I_CARDS:
             add_material(db, course, f"Calculus learning card §{section} — {title}", module, f"Mnemosyne original demo learning card · Section {section}: {title}\n\n{text}\n\nFor full textbook-grounded sources, add a lawfully obtained APEX PDF as .local-content/apex-novideo.pdf and rerun `docker compose exec -T api python -m app.seed`.")
         return False
+    # The bundled textbook replaces the lightweight cards used by the no-PDF
+    # demo. Delete their chunks explicitly so re-seeding is idempotent on
+    # databases created before the archive was unpacked.
+    demo_cards = db.scalars(select(CourseMaterial).where(
+        CourseMaterial.course_id == course.id,
+        CourseMaterial.title.like("Calculus learning card §%"),
+    )).all()
+    for material in demo_cards:
+        db.query(MaterialChunk).filter_by(material_id=material.id).delete()
+        db.delete(material)
     storage_key = "apex-calculus-5e.pdf"
     destination = safe_storage_path(settings.upload_dir, storage_key)
     if not destination.exists():

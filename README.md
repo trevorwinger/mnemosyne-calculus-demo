@@ -14,17 +14,19 @@ cd mnemosyne-calculus-demo
 ./bootstrap-demo.sh
 ```
 
-The script installs and starts [Ollama](https://ollama.com), downloads `gemma3:4b`, builds the local images, starts the demo, migrates the database, and seeds the course. It opens [http://localhost:3000](http://localhost:3000) when ready. The first run can take several minutes because Docker images and the Gemma model must be downloaded.
+The script installs and starts [Ollama](https://ollama.com), downloads `gemma4:12b`, verifies and privately unpacks the bundled APEX textbook, builds the local images, starts the demo, and preprocesses the selected textbook sections. It opens [http://localhost:3000](http://localhost:3000) when ready. The first run can take several minutes because Docker images and the Gemma model must be downloaded.
 
 Use a different Ollama model with `MNEMOSYNE_MODEL=model-name ./bootstrap-demo.sh`.
 
-The repository deliberately does not redistribute the textbook PDF. Without it, Mnemosyne seeds original, compact Calculus learning cards so the demo works immediately. To import selected textbook sections from a lawfully obtained local APEX PDF:
+The repository includes `assets/apex-calculus-5e.pdf.zip`, an unchanged copy of the textbook for this noncommercial prototype. It is covered by the included [textbook licensing notice](LICENSE-TEXTBOOK.md). The bootstrap script extracts it to the Git-ignored `.local-content/` folder, then preprocessing imports only the selected Calc I sections and worked examples into the private Docker volume.
+
+To use a different lawfully obtained local APEX PDF instead:
 
 ```sh
 APEX_TEXTBOOK_PDF=~/Downloads/apex-novideo.pdf ./bootstrap-demo.sh
 ```
 
-The PDF remains in `.local-content/` on the host, is copied into the prototype's private Docker volume, and is not served as a student download. It is ignored by Git.
+The extracted PDF remains in `.local-content/` on the host, is copied into the prototype's private Docker volume, and is not served by the app as a student download. The extracted copy is ignored by Git.
 
 ## Textbook preprocessing
 
@@ -35,7 +37,7 @@ The supplied **APEX Calculus, 5th edition (2026)** PDF is licensed [CC BY-NC 4.0
 - Using derivatives: §§3.1–3.4
 - Derivative applications: §§4.2–4.3
 
-Each imported section includes its introduction and up to three worked-example samples, with stable citation chunks. The chat’s **Textbook focus** control scopes retrieval to a chapter category or all imported sections. The original file stays private; no textbook content is added to this repository.
+Each imported section includes its introduction and up to three worked-example samples, with stable citation chunks. The chat’s **Textbook focus** control scopes retrieval to a chapter category or all imported sections. The archive is retained only for local preprocessing; the original PDF is not exposed through the application.
 
 ## Demo access
 
