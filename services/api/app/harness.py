@@ -18,7 +18,8 @@ class CheckedResponse:
 # following model is called. They intentionally cover high-signal domains; an
 # unfamiliar query is clarified rather than guessed to be on-topic.
 COURSE_DOMAINS = {
-    "calculus": (r"\bcalculus\b", r"\bderivativ", r"\bdifferentiat", r"\bintegral", r"\blimit(?:s)?\b", r"\bcontinuity\b", r"\bchain\s+rule\b", r"\bantiderivativ", r"\btangent\s+line\b", r"\brelated\s+rates\b", r"\bd[ y]?/d[ x]?\b"),
+    "calculus": (r"\bcalculus\b", r"\bderivativ", r"\bdifferentiat", r"\bintegral", r"\blimit(?:s)?\b", r"\bcontinuity\b", r"\bchain\s+rule\b", r"\bantiderivativ", r"\btangent\s+line\b", r"\bvector(?:s)?\b", r"\bdot\s+product\b", r"\bcross\s+product\b", r"\bparametric\b", r"\bpolar\b", r"\bsequence(?:s)?\b", r"\bseries\b", r"\btaylor\b", r"\bpartial\s+derivative", r"\bgradient\b", r"\bdirectional\s+derivative", r"\bdouble\s+integral", r"\btriple\s+integral", r"\bmultivariable\b"),
+    "calculus_i": (r"\bcalc(?:ulus)?\s*(?:i|1)\b", r"\bcalc(?:ulus)?\s*one\b"),
     "algebra": (r"\balgebra\b", r"\bquadratic", r"\blinear\b", r"\bfactor(?:ing|ed|s)?\b", r"\blogarith", r"\bexponent", r"\binequalit", r"\bsystem(?:s)?\s+of\s+equations", r"\bparabola", r"\bvertex\b", r"\bslope\b"),
     "programming": (r"\bjava\b", r"\bpython\b", r"\bjavascript\b", r"\bcode\b", r"\bprogram(?:ming)?\b", r"\barray", r"\bloop", r"\brecursion", r"\bmethod(?:s)?\b", r"\bvariable(?:s)?\b"),
     "general_off_topic": (r"\brecipe\b", r"\bcook(?:ing)?\b", r"\bsports?\b", r"\bweather\b", r"\bcelebrity\b", r"\bmovie(?:s)?\b", r"\bmusic\b", r"\bpolitics?\b", r"\btravel\b", r"\bfashion\b"),

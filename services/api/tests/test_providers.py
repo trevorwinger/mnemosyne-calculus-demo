@@ -28,7 +28,7 @@ def test_every_installed_chat_model_is_eligible_without_an_allowlist():
 
 
 def test_demo_tutor_creates_a_fresh_chapter_practice_prompt():
-    response = demo_response("Help me practice the topics from this chapter on limits")
-    assert "fresh example" in response
-    assert "x^2-16" in response
-    assert "first" in response.lower()
+    response = demo_response("Help me practice the topics from this chapter on vectors")
+    assert "u =" in response
+    assert "dot" in response.lower()
+    assert "component" in response.lower()

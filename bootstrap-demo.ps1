@@ -5,8 +5,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$WebPort = if ($env:MNEMOSYNE_WEB_PORT) { $env:MNEMOSYNE_WEB_PORT } else { "3100" }
-$ApiPort = if ($env:MNEMOSYNE_API_PORT) { $env:MNEMOSYNE_API_PORT } else { "8100" }
+$WebPort = if ($env:MNEMOSYNE_WEB_PORT) { $env:MNEMOSYNE_WEB_PORT } else { "3200" }
+$ApiPort = if ($env:MNEMOSYNE_API_PORT) { $env:MNEMOSYNE_API_PORT } else { "8200" }
 $WebUrl = "http://localhost:$WebPort"
 $Archive = Join-Path $RootDir "assets\apex-calculus-5e.pdf.zip"
 $ArchiveSha256 = "98DB405B9C7207F890CDDF78E1406A34898099D300C338119194D4706D9EA8CE"
@@ -40,7 +40,7 @@ function Test-PortAvailable([string]$Port, [string]$Name) {
     $inUse = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     if ($inUse) {
         $owner = docker ps --filter "publish=$Port" --format '{{.Label "com.docker.compose.project"}}' 2>$null | Select-Object -First 1
-        if ($owner -ne "mnemosyne-calculus-demo") {
+        if ($owner -ne "mnemosyne-calc3-demo") {
             throw "Port $Port is already in use ($Name). Choose another with `$env:MNEMOSYNE_${Name}_PORT = '3200' before running this script."
         }
     }

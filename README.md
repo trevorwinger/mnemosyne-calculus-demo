@@ -1,6 +1,6 @@
-# Mnemosyne · Calculus Demo
+# Mnemosyne · Calculus III Demo
 
-Mnemosyne is a shareable, single-interface demonstration of course-scoped tutoring. It opens directly into **Alex**, one fictional **MATH-240 Calculus I** student's chat, with cited Calculus material and a course-scope harness. There is no account selection, course dashboard, instructor tool, or course-administration path.
+Mnemosyne is a shareable, single-interface demonstration of course-scoped tutoring. It opens directly into **Alex**, one fictional **MATH 242 Calculus and Analytic Geometry III** student's chat, with cited Calculus III material and a course-scope harness. There is no account selection, course dashboard, instructor tool, or course-administration path.
 
 Use this repository to let colleagues evaluate the student experience and attempt to bypass its course, source, and solution-boundary protections. It is a demonstration environment, not a production student-data system.
 
@@ -41,13 +41,13 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 The PowerShell launcher uses `winget` to install Docker Desktop and Ollama if needed, starts both, then performs the same build and preprocessing steps. Docker Desktop needs WSL 2. If the script enables WSL, restart Windows when prompted and run the last two commands again. Complete any Docker Desktop first-run or license dialog before retrying.
 
-All launchers open [http://localhost:3100](http://localhost:3100) when ready. The demo intentionally uses web port `3100` and API port `8100`, so it can run alongside the original Mnemosyne development stack. PostgreSQL is private to Docker and is not exposed on a host port.
+All launchers open [http://localhost:3200](http://localhost:3200) when ready. The Calc III demo intentionally uses web port `3200` and API port `8200`, so it can run alongside the original Mnemosyne development stack and the Calc I demo. PostgreSQL is private to Docker and is not exposed on a host port.
 
-To choose different free ports, set `MNEMOSYNE_WEB_PORT` and `MNEMOSYNE_API_PORT` before launching. For example on macOS/Linux: `MNEMOSYNE_WEB_PORT=3200 MNEMOSYNE_API_PORT=8200 ./bootstrap-demo.sh`.
+To choose different free ports, set `MNEMOSYNE_WEB_PORT` and `MNEMOSYNE_API_PORT` before launching. For example on macOS/Linux: `MNEMOSYNE_WEB_PORT=3300 MNEMOSYNE_API_PORT=8300 ./bootstrap-demo.sh`.
 
 Use a different Ollama model with `MNEMOSYNE_MODEL=model-name ./bootstrap-demo.sh`.
 
-The repository includes `assets/apex-calculus-5e.pdf.zip`, an unchanged copy of the textbook for this noncommercial prototype. It is covered by the included [textbook licensing notice](LICENSE-TEXTBOOK.md). The bootstrap script extracts it to the Git-ignored `.local-content/` folder, then preprocessing imports only the selected Calc I sections and worked examples into the private Docker volume.
+The repository includes `assets/apex-calculus-5e.pdf.zip`, an unchanged copy of the textbook for this noncommercial prototype. It is covered by the included [textbook licensing notice](LICENSE-TEXTBOOK.md). The bootstrap script extracts it to the Git-ignored `.local-content/` folder, then preprocessing imports the selected Calc III sections and worked examples into the private Docker volume.
 
 To use a different lawfully obtained local APEX PDF instead:
 
@@ -59,18 +59,20 @@ The extracted PDF remains in `.local-content/` on the host, is copied into the p
 
 ## Textbook preprocessing
 
-The supplied **APEX Calculus, 5th edition (2026)** PDF is licensed [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Mnemosyne retains attribution and extracts a Calc I source set—not the whole book—for these sections:
+The supplied **APEX Calculus, 5th edition (2026)** PDF is licensed [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Mnemosyne retains attribution and extracts the complete Chapters 9–14 Calc III source set—not the whole book:
 
-- Limits and continuity: §§1.1, 1.3–1.5
-- Derivatives: §§2.1, 2.3–2.6
-- Using derivatives: §§3.1–3.4
-- Derivative applications: §§4.2–4.3
+- Sequences and series: §§9.1–9.8
+- Curves in the plane: §§10.1–10.5
+- Vectors: §§11.1–11.6
+- Vector-valued functions: §§12.1–12.5
+- Functions of several variables: §§13.1–13.8
+- Multiple integration: §§14.1–14.7
 
 Each imported section includes its introduction and up to three worked-example samples, with stable citation chunks. The chat’s **Textbook focus** control scopes retrieval to a chapter category or all imported sections. The archive is retained only for local preprocessing; the original PDF is not exposed through the application.
 
 ## Demo access
 
-Open [http://localhost:3000](http://localhost:3000). Mnemosyne automatically opens Alex's most recent chat. Use **New chat** to begin a separate session and **Chat history** to revisit prior sessions.
+Open [http://localhost:3200](http://localhost:3200). Mnemosyne automatically opens Alex's most recent chat. Use **New chat** to begin a separate session and **Chat history** to revisit prior sessions.
 
 The bootstrap configures Gemma as the standard tutor. Use **Refresh models** in chat to select any other locally installed Ollama model. The labeled `demo-tutor` also works without Ollama.
 
@@ -90,7 +92,7 @@ Read [SECURITY_TESTING.md](SECURITY_TESTING.md) before sharing the prototype. It
 | `docker compose down` | Stop/remove containers while retaining data. |
 | `docker compose down -v` | **Delete the prototype database and private uploaded book.** |
 
-The default ports are web `3100` and API `8100`; PostgreSQL is not exposed to the host. If Docker cannot access a package registry on a campus network, reconnect to a network that permits Docker Hub, npm, PyPI, and Ollama downloads, or configure Docker Desktop's proxy/certificates.
+The default ports are web `3200` and API `8200`; PostgreSQL is not exposed to the host. If Docker cannot access a package registry on a campus network, reconnect to a network that permits Docker Hub, npm, PyPI, and Ollama downloads, or configure Docker Desktop's proxy/certificates.
 
 ## Production boundary
 

@@ -67,17 +67,25 @@ async def discover_models() -> list[AvailableModel]:
 def demo_response(message: str) -> str:
     lowered = message.lower()
     if any(term in lowered for term in ("practice", "practice problem", "practice topics")):
-        if any(term in lowered for term in ("limit", "continuity", "chapter 1")):
-            return r"Let’s practice limits with a fresh example. Try \(\lim_{x \to 4} \frac{x^2-16}{x-4}\). First, factor the numerator and tell me what factor can cancel before you substitute \(x=4\)."
-        if any(term in lowered for term in ("related rate", "optimization", "chapter 3", "chapter 4", "application")):
-            return "Let’s practice an application. A square’s side length is increasing at 3 cm/s. When the side is 5 cm, what quantity should we differentiate first if the goal is the rate of change of area? Write that relationship before calculating anything."
-        return r"Let’s practice derivative rules with a fresh example: \(g(x)=(2x-3)e^x\). Which rule applies first, and what two factors will you call \(u\) and \(v\)? Send that setup and we’ll take the next step together."
+        if any(term in lowered for term in ("series", "sequence", "taylor", "chapter 9")):
+            return r"Let’s practice series reasoning. Consider \(\sum_{n=1}^{\infty} \frac{1}{n^3+2}\). Before choosing a test, what familiar comparison expression could help you decide whether it converges?"
+        if any(term in lowered for term in ("parametric", "polar", "chapter 10", "curve")):
+            return r"Let’s practice parametric curves. For \(x=t^2-1\) and \(y=2t+3\), what should you solve for first if the goal is to eliminate \(t\)? Show only that setup."
+        if any(term in lowered for term in ("vector", "dot", "cross", "plane", "chapter 11")):
+            return "Let’s practice a dot product. Let u = ⟨2, -1, 3⟩ and v = ⟨1, 4, -2⟩. Which matching component products belong in u · v before you add them?"
+        if any(term in lowered for term in ("partial", "gradient", "multivariable", "directional", "chapter 13")):
+            return r"Let’s practice partial derivatives. For \(f(x,y)=x^2y+3y^2\), which variable is held fixed when finding \(f_x\), and what is your first differentiation step?"
+        if any(term in lowered for term in ("double integral", "triple integral", "multiple integration", "chapter 14", "volume")):
+            return "Let’s practice a double integral setup. For the rectangle 0 ≤ x ≤ 2 and 1 ≤ y ≤ 4, what two bounds would you write for ∫∫_R (x+y) dA before evaluating?"
+        return "Let’s practice a Calc III idea. Choose one focus: sequences and series, parametric/polar curves, vectors, vector-valued functions, multivariable derivatives, or multiple integration. Which chapter are you working on?"
     if "array" in lowered or "length" in lowered:
         return "For an array loop, pause at the boundary: `length` is a count, while the last valid index is one less. Write down the first and last index your loop would try, then compare them with the array length. What condition are you using now?"
     if "loop" in lowered or "for" in lowered or "while" in lowered:
         return "A helpful way to trace a loop is to make a three-column table: starting value, condition result, and value after the update. Try the first two passes. At which pass do you expect the condition to become false?"
-    if any(term in lowered for term in ("derivative", "differentiat", "chain rule", "product rule", "quotient rule")):
-        return "Start by identifying the structure of the function: is it a sum, product, quotient, or composition? Name the outer and inner functions (or the two factors), then share that setup and I’ll help you choose the next rule."
+    if any(term in lowered for term in ("vector", "dot product", "cross product", "plane")):
+        return "Start by identifying the kind of vector result you need: a scalar for a dot product, a perpendicular vector for a cross product, or a direction/normal vector for a line or plane. What information have you already labeled?"
+    if any(term in lowered for term in ("partial", "gradient", "multivariable", "double integral", "triple integral", "parametric", "polar", "series", "sequence")):
+        return "Start by naming the object and the goal: a sequence/series test, a curve representation, a multivariable derivative, or an integral over a region. Show the smallest setup you have, and I’ll help with one next step."
     return "I can help you reason through that. First, state the goal in your own words and show the smallest part you have tried. I’ll respond with one focused next step rather than a finished solution."
 
 async def generate(model: AvailableModel, messages: list[dict[str, str]]) -> tuple[str, int | None, int | None, int | None]:

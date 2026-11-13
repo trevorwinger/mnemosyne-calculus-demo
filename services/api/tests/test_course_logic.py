@@ -7,6 +7,6 @@ def test_concept_slugs_are_stable_and_safe():
 
 
 def test_learning_evidence_requires_an_attempt_and_matches_course_terms():
-    assert learning_evidence_candidate("What is a derivative?") is None
-    candidate = learning_evidence_candidate("I think my limit from the left is 3, but I need a hint.")
-    assert candidate and candidate["concept_slug"] == "limits"
+    assert learning_evidence_candidate("What is a dot product?") is None
+    candidate = learning_evidence_candidate("I think my dot product is 3, but I need a hint.")
+    assert candidate and candidate["concept_slug"] == "vectors-geometry"

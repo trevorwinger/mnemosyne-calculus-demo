@@ -1,4 +1,4 @@
-name: mnemosyne-calculus-demo
+name: mnemosyne-calc3-demo
 services:
   db:
     image: postgres:16-alpine
@@ -19,12 +19,12 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://office_hours:change-me-before-production@db:5432/office_hours}
       APP_ENV: ${APP_ENV:-development}
       DEMO_MODE: ${DEMO_MODE:-true}
-      WEB_ORIGIN: http://localhost:${MNEMOSYNE_WEB_PORT:-3100}
+      WEB_ORIGIN: http://localhost:${MNEMOSYNE_WEB_PORT:-3200}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       PROTOTYPE_DEFAULT_MODEL: ${PROTOTYPE_DEFAULT_MODEL:-demo-tutor}
       CODE_EXECUTION_ENABLED: ${CODE_EXECUTION_ENABLED:-true}
       CODE_RUNNER_SOCKET: /runner/java-runner.sock
-    ports: ["127.0.0.1:${MNEMOSYNE_API_PORT:-8100}:8000"]
+    ports: ["127.0.0.1:${MNEMOSYNE_API_PORT:-8200}:8000"]
     depends_on:
       db: { condition: service_healthy }
       runner: { condition: service_started }
@@ -64,10 +64,10 @@ services:
     build:
       context: ./apps/web
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:${MNEMOSYNE_API_PORT:-8100}
+        NEXT_PUBLIC_API_URL: http://localhost:${MNEMOSYNE_API_PORT:-8200}
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:${MNEMOSYNE_API_PORT:-8100}
-    ports: ["127.0.0.1:${MNEMOSYNE_WEB_PORT:-3100}:3000"]
+      NEXT_PUBLIC_API_URL: http://localhost:${MNEMOSYNE_API_PORT:-8200}
+    ports: ["127.0.0.1:${MNEMOSYNE_WEB_PORT:-3200}:3000"]
     depends_on: [api]
 
 volumes:

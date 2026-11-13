@@ -5,8 +5,8 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODEL_NAME="${MNEMOSYNE_MODEL:-gemma4:12b}"
-WEB_PORT="${MNEMOSYNE_WEB_PORT:-3100}"
-API_PORT="${MNEMOSYNE_API_PORT:-8100}"
+WEB_PORT="${MNEMOSYNE_WEB_PORT:-3200}"
+API_PORT="${MNEMOSYNE_API_PORT:-8200}"
 WEB_URL="http://localhost:$WEB_PORT"
 BUNDLED_TEXTBOOK_ARCHIVE="$ROOT_DIR/assets/apex-calculus-5e.pdf.zip"
 BUNDLED_TEXTBOOK_SHA256="98db405b9c7207f890cddf78e1406a34898099d300c338119194d4706d9ea8ce"
@@ -21,7 +21,7 @@ ensure_port_available() {
   local port="$1" label="$2" owner
   if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1; then
     owner="$(docker_cmd ps --filter "publish=$port" --format '{{.Label "com.docker.compose.project"}}' 2>/dev/null | head -n 1)"
-    [[ "$owner" == "mnemosyne-calculus-demo" ]] && return
+    [[ "$owner" == "mnemosyne-calc3-demo" ]] && return
     fail "Port $port is already in use ($label). Choose another port, for example: MNEMOSYNE_${label}_PORT=3200 ./bootstrap-demo.sh"
   fi
 }

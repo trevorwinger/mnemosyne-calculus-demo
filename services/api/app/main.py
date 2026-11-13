@@ -52,7 +52,7 @@ def learning_evidence_candidate(message: str) -> dict | None:
     concepts = (
         ("array-boundaries", ("array", "length", "index")), ("arrays", ("array",)), ("loops", ("loop", "for (", "while")),
         ("functions", ("function", "domain", "range")), ("quadratics", ("quadratic", "parabola", "vertex")), ("linear-equations", ("linear", "slope", "equation")),
-        ("limits", ("limit", "left-hand", "right-hand")), ("derivative-rules", ("derivative", "differentiate")), ("chain-rule", ("chain rule",)), ("derivative-applications", ("rate of change", "related rates")),
+        ("sequences-series", ("sequence", "series", "convergence", "taylor")), ("parametric-polar", ("parametric", "polar", "conic")), ("vectors-geometry", ("vector", "dot product", "cross product", "plane")), ("vector-valued-functions", ("vector-valued", "velocity", "acceleration", "curvature")), ("multivariable-derivatives", ("partial derivative", "gradient", "directional derivative", "multivariable")), ("multiple-integration", ("double integral", "triple integral", "iterated integral", "cylindrical", "spherical")),
     )
     slug = next((candidate for candidate, terms in concepts if any(term in text for term in terms)), None)
     if not slug: return None
@@ -333,21 +333,23 @@ def course_suggestions(course_id: UUID, user: User = Depends(current_user), db: 
     summaries = db.query(ConceptSummary, Concept.name).join(Concept, Concept.id == ConceptSummary.concept_id).filter(ConceptSummary.student_id == user.id, ConceptSummary.course_id == course_id).order_by(ConceptSummary.updated_at.desc()).limit(3).all()
     for summary, concept_name in summaries:
         concept = concept_name.lower()
-        if "array" in concept: prompt = "Give me a hint for checking an array loop boundary."
-        elif "limit" in concept: prompt = "Help me test a limit from the left and right."
-        elif "derivative" in concept: prompt = "Help me choose the first derivative rule to try."
-        elif "quadratic" in concept: prompt = "Help me decide which quadratic form is most useful here."
+        if "sequence" in concept: prompt = "Help me choose a convergence test, one step at a time."
+        elif "parametric" in concept or "polar" in concept: prompt = "Help me set up a parametric or polar curve question."
+        elif "vector" in concept: prompt = "Help me identify whether I need a dot product, cross product, or vector equation."
+        elif "multivariable" in concept: prompt = "Help me take the first partial derivative in this problem."
+        elif "multiple integration" in concept: prompt = "Help me set up the bounds for this multiple integral."
         else: prompt = f"Help me practice {concept_name} with one manageable step."
         prompts.append(CourseSuggestion(prompt=prompt, basis=f"Based on your recorded progress: {summary.status} in {concept_name}.", material_title=""))
     notes = db.query(CourseMaterial).filter(CourseMaterial.course_id == course_id, CourseMaterial.active.is_(True), CourseMaterial.student_visible.is_(True), CourseMaterial.processing_status == "ready", or_(CourseMaterial.release_at.is_(None), CourseMaterial.release_at <= datetime.now(timezone.utc))).order_by(CourseMaterial.created_at).limit(3).all()
     for note in notes:
         if len(prompts) >= 3: break
-        if "Arrays" in note.title: prompt = "Help me trace the last iteration of an array loop."
-        elif "Methods" in note.title: prompt = "Help me identify a method's inputs and output."
-        elif "Functions" in note.title: prompt = "Help me compare a parent function with a transformed graph."
-        elif "Quadratic" in note.title: prompt = "Which quadratic form best shows the information I need?"
-        elif "Limits" in note.title: prompt = "Help me reason about a limit from the left and right."
-        else: prompt = "Help me name the quantities and units before using a derivative."
+        if "Sequences" in note.title or "Series" in note.title: prompt = "Help me decide which convergence test fits this series."
+        elif "Curves" in note.title: prompt = "Help me interpret this parametric or polar curve."
+        elif "Vectors" in note.title: prompt = "Help me choose the right vector operation for this question."
+        elif "Vector-Valued" in note.title: prompt = "Help me relate position, velocity, and acceleration."
+        elif "Several Variables" in note.title: prompt = "Help me identify which variable is held fixed in this partial derivative."
+        elif "Multiple Integration" in note.title: prompt = "Help me describe the region before setting up the integral."
+        else: prompt = "Help me practice one idea from this textbook section."
         prompts.append(CourseSuggestion(prompt=prompt, basis=f"From {note.title}", material_title=note.title))
     return prompts
 
