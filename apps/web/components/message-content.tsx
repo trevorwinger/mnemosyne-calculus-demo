@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import React, { Fragment } from "react";
 import katex from "katex";
 
 function MathExpression({ expression, display = false }: { expression: string; display?: boolean }) {
@@ -28,7 +28,7 @@ function Inline({ text }: { text: string }) {
     if (piece.startsWith("`") && piece.endsWith("`")) return <code className="rounded bg-[var(--surface)] px-1.5 py-0.5 font-mono text-sm" key={index}>{piece.slice(1, -1)}</code>;
     if (piece.startsWith("\\(") && piece.endsWith("\\)")) return <MathExpression expression={piece.slice(2, -2)} key={index}/>;
     if (piece.startsWith("$") && piece.endsWith("$")) return <MathExpression expression={piece.slice(1, -1)} key={index}/>;
-    if (piece.startsWith("**") && piece.endsWith("**")) return <strong key={index}>{piece.slice(2, -2)}</strong>;
+    if (piece.startsWith("**") && piece.endsWith("**")) return <strong key={index}><Inline text={piece.slice(2, -2)}/></strong>;
     return <Fragment key={index}>{piece}</Fragment>;
   })}</>;
 }

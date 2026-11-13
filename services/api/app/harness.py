@@ -49,7 +49,15 @@ def course_relevance(message: str, course_context: str) -> str:
     return "related" if question_terms & context_terms else "needs_clarification"
 
 
-def conversation_relevance(message: str, course_context: str, preceding_user_messages: list[str]) -> str:
+def is_short_tutor_reply(message: str) -> bool:
+    """Recognize a minimal answer that can safely continue a tutor-led step."""
+    compact = message.strip()
+    if not compact or len(compact) > 120:
+        return False
+    return bool(re.fullmatch(r"[-+]?\d+(?:[.,/]\d+)?(?:\s*[+\-*/^=<>]\s*[-+]?\d+(?:[.,/]\d+)?)*|[a-zA-Z](?:\s*[.)])?|(?:yes|no|maybe|correct|i think so)", compact, flags=re.IGNORECASE))
+
+
+def conversation_relevance(message: str, course_context: str, preceding_user_messages: list[str], preceding_assistant_messages: list[str] | None = None) -> str:
     """Allow an ambiguous follow-up to continue the recent, established course topic.
 
     An explicit off-topic request never inherits relevance from earlier turns.
@@ -57,6 +65,13 @@ def conversation_relevance(message: str, course_context: str, preceding_user_mes
     relevance = course_relevance(message, course_context)
     if relevance != "needs_clarification":
         return relevance
+    if is_short_tutor_reply(message):
+        # Several numeric steps must not lose the original course question
+        # merely because the last two user turns were also short answers. An
+        # explicit off-topic request was already rejected above; a bare number
+        # may safely inherit the nearest established course thread.
+        if any(course_relevance(previous, course_context) == "related" for previous in preceding_user_messages[-8:]):
+            return "related"
     recent_messages = preceding_user_messages[-2:]
     return "related" if any(course_relevance(previous, course_context) == "related" for previous in recent_messages) else relevance
 

@@ -32,3 +32,8 @@ def test_demo_tutor_creates_a_fresh_chapter_practice_prompt():
     assert "fresh example" in response
     assert "x^2-16" in response
     assert "first" in response.lower()
+
+
+def test_demo_tutor_ignores_retrieval_excerpt_keywords():
+    response = demo_response("15")
+    assert "trace a loop" not in response.lower()
