@@ -1,0 +1,33 @@
+{
+  "name": "office-hours-web",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest run --exclude e2e/**",
+    "test:a11y": "playwright test"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "4.1.8",
+    "katex": "^0.16.22",
+    "lucide-react": "0.511.0",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwindcss": "4.1.8"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@eslint/eslintrc": "3.3.1",
+    "@playwright/test": "^1.51.1",
+    "@types/node": "24.0.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.28.0",
+    "eslint-config-next": "16.4.6",
+    "typescript": "5.8.3",
+    "vitest": "3.2.3"
+  }
+}

@@ -1,0 +1,13 @@
+.env
+.env.local
+.DS_Store
+node_modules/
+apps/web/node_modules/
+apps/web/.next/
+__pycache__/
+.pytest_cache/
+*.pyc
+uploads/
+test-results/
+.local-content/*
+!.local-content/.gitkeep

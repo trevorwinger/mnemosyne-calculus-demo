@@ -1,0 +1,74 @@
+name: mnemosyne-calculus-demo
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-office_hours}
+      POSTGRES_USER: ${POSTGRES_USER:-office_hours}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-before-production}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  api:
+    build: ./services/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://office_hours:change-me-before-production@db:5432/office_hours}
+      APP_ENV: ${APP_ENV:-development}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      PROTOTYPE_DEFAULT_MODEL: ${PROTOTYPE_DEFAULT_MODEL:-demo-tutor}
+      CODE_EXECUTION_ENABLED: ${CODE_EXECUTION_ENABLED:-true}
+      CODE_RUNNER_SOCKET: /runner/java-runner.sock
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+      runner: { condition: service_started }
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes: [private-uploads:/app/uploads, runner-socket:/runner, ./.local-content:/seed:ro]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  worker:
+    build: ./services/api
+    command: python -m app.worker
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://office_hours:change-me-before-production@db:5432/office_hours}
+      APP_ENV: ${APP_ENV:-development}
+    depends_on:
+      api: { condition: service_healthy }
+    volumes: [private-uploads:/app/uploads, ./.local-content:/seed:ro]
+
+  runner:
+    build: ./services/runner
+    network_mode: "none"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+      - /work:rw,nosuid,nodev,exec,size=64m
+    volumes: [runner-socket:/runner]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 512m
+    cpus: 0.5
+
+  web:
+    build: ./apps/web
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on: [api]
+
+volumes:
+  postgres-data:
+  private-uploads:
+  runner-socket:

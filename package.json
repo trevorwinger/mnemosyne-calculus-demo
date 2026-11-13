@@ -1,0 +1,21 @@
+{
+  "name": "office-hours",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A course-scoped tutoring workspace",
+  "scripts": {
+    "install:deps": "node scripts/install-dependencies.mjs",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "start": "node scripts/compose.mjs up -d --build",
+    "stop": "node scripts/compose.mjs stop",
+    "logs": "node scripts/compose.mjs logs -f",
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "test:web": "npm --prefix apps/web run lint && npm --prefix apps/web run test",
+    "test:a11y": "npm --prefix apps/web run test:a11y",
+    "test:api": "docker compose build api && docker compose run --rm --no-deps api pytest",
+    "test:runner": "docker compose build runner && docker compose run --rm --no-deps runner pytest -p no:cacheprovider",
+    "verify": "npm run test:web && npm run build && npm run test:api && npm run test:runner"
+  }
+}
