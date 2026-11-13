@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import React from "react";
 import { describe, expect, it } from "vitest";
 import { MessageContent } from "./message-content";
 
@@ -22,5 +23,13 @@ describe("MessageContent", () => {
     expect(output).toContain("frac");
     expect(output).not.toContain("\\\\(");
     expect(output).not.toContain("\\\\[");
+  });
+
+  it("renders TeX nested inside Markdown bold text", () => {
+    const output = renderToStaticMarkup(<MessageContent content={String.raw`**$\vec{u} \cdot \vec{v}$** and **\(\frac{3}{4}\)**`}/>);
+    expect(output).toContain("<strong><span");
+    expect(output).toContain('class="katex"');
+    expect(output).not.toContain("$\\vec");
+    expect(output).not.toContain("\\(");
   });
 });

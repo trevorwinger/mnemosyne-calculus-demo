@@ -93,7 +93,10 @@ async def generate(model: AvailableModel, messages: list[dict[str, str]]) -> tup
     async with model_semaphore:
         messages = bounded_messages(messages)
         if model.provider == "demo":
-            content = demo_response(messages[-1]["content"])
+            # Retrieval excerpts are appended only for model grounding. The
+            # deterministic fallback must react to the learner's text, not a
+            # keyword that happens to appear inside an excerpt.
+            content = demo_response(messages[-1]["content"].split("\n\nReleased course excerpts", 1)[0])
             return content, round((time.perf_counter() - started) * 1000), None, None
         if not model.approved: raise HTTPException(status.HTTP_403_FORBIDDEN, "This installed model cannot generate chat responses.")
         body = {"model": model.name, "stream": False, "think": False, "messages": [{"role": "system", "content": SYSTEM_POLICY}, *messages]}

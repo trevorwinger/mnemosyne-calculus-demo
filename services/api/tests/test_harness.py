@@ -48,6 +48,16 @@ def test_ambiguous_follow_up_keeps_the_recent_course_context():
     assert conversation_relevance("Can you help me with the next step?", programming_context, programming_previous) == "related"
 
 
+def test_short_numeric_reply_stays_in_a_tutor_led_course_problem():
+    calculus_context = "MATH 242 Calculus and Analytic Geometry III. Vectors, dot products, and cross products."
+    assert conversation_relevance("15", calculus_context, ["What is a dot product?", "3", "8"], ["What is the result when you multiply the third components (3×5)?"]) == "related"
+
+
+def test_short_reply_without_an_established_course_thread_does_not_inherit_context():
+    calculus_context = "MATH 242 Calculus and Analytic Geometry III. Vectors and dot products."
+    assert conversation_relevance("15", calculus_context, ["Hello", "okay"], ["Good work."]) == "needs_clarification"
+
+
 def test_explicitly_off_topic_follow_up_does_not_inherit_course_context():
     calculus_context = "MATH-240 Calculus and Analytic Geometry I. Limits, derivatives, chain rule, and rates of change."
     assert conversation_relevance("What is a good dinner recipe?", calculus_context, ["How do I take the derivative?"]) == "out_of_scope"
