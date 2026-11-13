@@ -38,7 +38,12 @@ function Test-Docker {
 }
 function Test-PortAvailable([string]$Port, [string]$Name) {
     $inUse = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-    if ($inUse) { throw "Port $Port is already in use ($Name). Choose another with `$env:MNEMOSYNE_${Name}_PORT = '3200' before running this script." }
+    if ($inUse) {
+        $owner = docker ps --filter "publish=$Port" --format '{{.Label "com.docker.compose.project"}}' 2>$null | Select-Object -First 1
+        if ($owner -ne "mnemosyne-calculus-demo") {
+            throw "Port $Port is already in use ($Name). Choose another with `$env:MNEMOSYNE_${Name}_PORT = '3200' before running this script."
+        }
+    }
 }
 
 Require-Winget

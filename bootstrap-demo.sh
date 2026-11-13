@@ -18,8 +18,10 @@ DOCKER_CMD=(docker)
 docker_cmd() { "${DOCKER_CMD[@]}" "$@"; }
 
 ensure_port_available() {
-  local port="$1" label="$2"
+  local port="$1" label="$2" owner
   if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1; then
+    owner="$(docker_cmd ps --filter "publish=$port" --format '{{.Label "com.docker.compose.project"}}' 2>/dev/null | head -n 1)"
+    [[ "$owner" == "mnemosyne-calculus-demo" ]] && return
     fail "Port $port is already in use ($label). Choose another port, for example: MNEMOSYNE_${label}_PORT=3200 ./bootstrap-demo.sh"
   fi
 }
