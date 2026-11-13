@@ -49,8 +49,8 @@ def test_ambiguous_follow_up_keeps_the_recent_course_context():
 
 
 def test_short_numeric_reply_stays_in_a_tutor_led_course_problem():
-    calculus_context = "MATH 242 Calculus and Analytic Geometry III. Vectors, dot products, and cross products."
-    assert conversation_relevance("15", calculus_context, ["What is a dot product?", "3", "8"], ["What is the result when you multiply the third components (3×5)?"]) == "related"
+    calculus_context = "MATH-240 Calculus and Analytic Geometry I. Limits, derivatives, and the chain rule."
+    assert conversation_relevance("15", calculus_context, ["How do I take a derivative?", "3", "8"], ["What is the next value?"]) == "related"
 
 
 def test_short_reply_without_an_established_course_thread_does_not_inherit_context():
