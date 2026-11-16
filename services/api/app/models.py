@@ -73,9 +73,10 @@ class TutoringSession(Base):
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
-    __table_args__ = (Index("ix_message_session_created", "session_id", "created_at"),)
+    __table_args__ = (UniqueConstraint("session_id", "sequence", name="uq_message_session_sequence"), Index("ix_message_session_created", "session_id", "created_at"),)
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tutoring_sessions.id", ondelete="CASCADE"), index=True)
+    sequence: Mapped[int] = mapped_column(Integer)
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
     message_metadata: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)

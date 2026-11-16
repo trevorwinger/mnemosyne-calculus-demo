@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     max_upload_mb: int = 25
     max_request_mb: int = 26
     upload_dir: str = "/app/uploads"
+    chat_log_dir: str = "/app/chats"
+    chat_logging_enabled: bool = True
     max_context_chars: int = 18000
     max_model_concurrency: int = 1
     ollama_timeout_seconds: int = 60

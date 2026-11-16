@@ -76,6 +76,10 @@ Open [http://localhost:3200](http://localhost:3200). Mnemosyne automatically ope
 
 The bootstrap configures Gemma as the standard tutor. Use **Refresh models** in chat to select any other locally installed Ollama model. The labeled `demo-tutor` also works without Ollama.
 
+## Shareable chat transcripts
+
+Every completed tutoring turn automatically refreshes one JSON transcript per chat session in the repository's local `chats/` directory. Messages include an explicit per-session sequence number, role, timestamp, citations, and session/course/model metadata, so the original conversational order is retained even when messages share a timestamp. These JSON files are intentionally Git-ignored: review and redact them before sending one to a colleague, then attach the relevant `chats/<session-id>.json` file to a follow-up or issue. The folder is mounted into the API container, so transcripts remain available after containers are restarted.
+
 ## Safety evaluation
 
 Read [SECURITY_TESTING.md](SECURITY_TESTING.md) before sharing the prototype. It provides a small, ethical test matrix for course-boundary, prompt-injection, and solution-leakage checks, and explains how to report failures without putting real student data in prompts.
