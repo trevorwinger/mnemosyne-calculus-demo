@@ -8,6 +8,8 @@ __pycache__/
 .pytest_cache/
 *.pyc
 uploads/
+chats/*.json
+!chats/.gitkeep
 test-results/
 .local-content/*
 !.local-content/.gitkeep

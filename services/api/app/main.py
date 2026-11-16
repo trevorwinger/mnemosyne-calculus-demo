@@ -10,7 +10,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import String, and_, cast, func, or_
+from sqlalchemy import String, and_, cast, func, or_, select
 from sqlalchemy.orm import Session
 from .config import settings
 from .db import get_db
@@ -25,6 +25,7 @@ from .rate_limit import SlidingWindowRateLimiter
 from .request_limits import content_length_exceeds
 from .exercise_evaluation import evaluate_short_answer
 from .code_runner import CodeRunnerUnavailable, run_code
+from .chat_logging import export_session_transcript
 
 app = FastAPI(title="Mnemosyne API", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=[settings.web_origin], allow_credentials=False, allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "X-Demo-User"])
@@ -87,6 +88,13 @@ def get_owned_session(session_id: UUID, user: User, db: Session) -> TutoringSess
     return session
 def message_out(message: ChatMessage) -> MessageOut:
     return MessageOut(id=message.id, role=message.role, content=message.content, created_at=message.created_at, citations=(message.message_metadata or {}).get("citations", []))
+def append_chat_message(db: Session, session_id: UUID, role: str, content: str, metadata: dict | None = None) -> ChatMessage:
+    """Persist a message with a stable, per-session transcript position."""
+    sequence = int(db.scalar(select(func.coalesce(func.max(ChatMessage.sequence), 0) + 1).where(ChatMessage.session_id == session_id)))
+    message = ChatMessage(session_id=session_id, sequence=sequence, role=role, content=content, message_metadata=metadata or {})
+    db.add(message)
+    db.flush()
+    return message
 async def get_allowed_model(model_name: str) -> AvailableModel:
     found = next((model for model in await discover_models() if model.name == model_name), None)
     if not found: raise HTTPException(status.HTTP_400_BAD_REQUEST, "Selected model is unavailable.")
@@ -499,7 +507,7 @@ def export_course_data(course_id: UUID, user: User = Depends(current_user), db: 
     require_membership(course_id, user, db)
     sessions = db.query(TutoringSession).filter_by(course_id=course_id, user_id=user.id).all()
     session_ids = [item.id for item in sessions]
-    messages = db.query(ChatMessage).filter(ChatMessage.session_id.in_(session_ids)).order_by(ChatMessage.created_at).all() if session_ids else []
+    messages = db.query(ChatMessage).filter(ChatMessage.session_id.in_(session_ids)).order_by(ChatMessage.session_id, ChatMessage.sequence).all() if session_ids else []
     attempts = db.query(ExerciseAttempt, Exercise.title).join(Exercise, Exercise.id == ExerciseAttempt.exercise_id).filter(ExerciseAttempt.student_id == user.id, Exercise.course_id == course_id).order_by(ExerciseAttempt.created_at).all()
     memory = course_memory(course_id, user, db)
     progress = course_progress(course_id, user, db)
@@ -637,7 +645,7 @@ async def create_session(course_id: UUID, payload: SessionCreate, user: User = D
 @app.get("/v1/sessions/{session_id}", response_model=SessionDetail)
 def session_detail(session_id: UUID, user: User = Depends(current_user), db: Session = Depends(get_db)):
     session = get_owned_session(session_id, user, db)
-    messages = db.query(ChatMessage).filter_by(session_id=session.id).order_by(ChatMessage.created_at).all()
+    messages = db.query(ChatMessage).filter_by(session_id=session.id).order_by(ChatMessage.sequence).all()
     return SessionDetail(id=session.id, course_id=session.course_id, title=session.title, model_name=session.model_name, memory_enabled=session.memory_enabled, material_scope=session.material_scope, created_at=session.created_at, updated_at=session.updated_at, messages=[message_out(message) for message in messages])
 
 @app.post("/v1/sessions/{session_id}/messages", response_model=list[MessageOut])
@@ -646,9 +654,8 @@ async def send_message(session_id: UUID, payload: SendMessage, request: Request,
     model = await get_allowed_model(payload.model_name or session.model_name)
     model_change_message = None
     if payload.model_name and payload.model_name != session.model_name:
-        model_change_message = ChatMessage(session_id=session.id, role="system", content=f"Tutor model switched to {model.name}.", message_metadata={"event": "model_changed", "model_name": model.name})
+        model_change_message = append_chat_message(db, session.id, "system", f"Tutor model switched to {model.name}.", {"event": "model_changed", "model_name": model.name})
         session.model_name = payload.model_name
-        db.add(model_change_message); db.flush()
     if payload.memory_enabled is not None:
         session.memory_enabled = payload.memory_enabled
     scope_change_message = None
@@ -656,12 +663,10 @@ async def send_message(session_id: UUID, payload: SendMessage, request: Request,
         selected_material_ids = [str(item) for item in payload.material_ids] if payload.material_ids is not None else None
         if selected_material_ids != session.material_scope.get("material_ids"):
             description = "All released course materials" if selected_material_ids is None else f"{len(selected_material_ids)} selected course material{'s' if len(selected_material_ids) != 1 else ''}"
-            scope_change_message = ChatMessage(session_id=session.id, role="system", content=f"Course source scope changed to {description}.", message_metadata={"event": "material_scope_changed", "material_ids": selected_material_ids})
-            db.add(scope_change_message); db.flush()
+            scope_change_message = append_chat_message(db, session.id, "system", f"Course source scope changed to {description}.", {"event": "material_scope_changed", "material_ids": selected_material_ids})
         session.material_scope = {"material_ids": selected_material_ids}
-    user_message = ChatMessage(session_id=session.id, role="user", content=payload.content.strip(), message_metadata={"memory_enabled": session.memory_enabled})
-    db.add(user_message); db.flush()
-    history = db.query(ChatMessage).filter_by(session_id=session.id).order_by(ChatMessage.created_at.desc()).limit(32).all()[::-1]
+    user_message = append_chat_message(db, session.id, "user", payload.content.strip(), {"memory_enabled": session.memory_enabled})
+    history = db.query(ChatMessage).filter_by(session_id=session.id).order_by(ChatMessage.sequence.desc()).limit(32).all()[::-1]
     sources = retrieve_sources(db, session.course_id, payload.content, session.material_scope.get("material_ids"))
     provider_history = [{"role": message.role, "content": message.content} for message in history]
     course = db.get(Course, session.course_id)
@@ -704,8 +709,7 @@ async def send_message(session_id: UUID, payload: SendMessage, request: Request,
         generation_attempts = 0
     citations = [{"material_id": str(material.id), "title": material.title, "location": chunk.location_label} for material, chunk in sources]
     rendered = checked.content + ("\n\nCourse sources: " + "; ".join(f"{item['title']} ({item['location']})" for item in citations) if citations else "\n\nNo released course source matched this question.")
-    assistant_message = ChatMessage(session_id=session.id, role="assistant", content=rendered, message_metadata={"harness_action": checked.action, "checked": True, "memory_enabled": session.memory_enabled, "citations": citations, "material_scope": session.material_scope})
-    db.add(assistant_message)
+    assistant_message = append_chat_message(db, session.id, "assistant", rendered, {"harness_action": checked.action, "checked": True, "memory_enabled": session.memory_enabled, "citations": citations, "material_scope": session.material_scope})
     if session.title == "New tutoring session": session.title = payload.content.strip()[:80]
     db.add(ModelRun(session_id=session.id, request_message_id=user_message.id, response_message_id=assistant_message.id, provider=model.provider, model_identifier=model.name, model_digest=model.digest, harness_version=HARNESS_VERSION, latency_ms=latency, input_tokens=input_tokens, output_tokens=output_tokens, status="completed", run_metadata={"action": checked.action, "candidate_changed": checked.changed, "generation_attempts": generation_attempts, "memory_enabled": session.memory_enabled, "memory_summary_ids": memory_summary_ids, "material_scope": session.material_scope, "source_ids": [item["material_id"] for item in citations], "course_settings": {"learning_objectives": objectives, "prerequisites": prerequisites, "guidance": guidance}}))
     # Collection is mandatory for eligible evidence regardless of memory reads.
@@ -713,6 +717,7 @@ async def send_message(session_id: UUID, payload: SendMessage, request: Request,
     if evidence:
         db.add(BackgroundJob(kind="derive_learning_event", payload={"message_id": str(user_message.id), "student_id": str(user.id), "course_id": str(session.course_id), **evidence}, idempotency_key=f"learning-event:{user_message.id}"))
         queue_retention_prune(db, course, f"retention-daily:{session.course_id}:{datetime.now(timezone.utc).date().isoformat()}")
-    db.commit(); db.refresh(user_message); db.refresh(assistant_message)
+    db.commit(); db.refresh(session); db.refresh(user_message); db.refresh(assistant_message)
+    export_session_transcript(db, session, course, user)
     events = [item for item in (model_change_message, scope_change_message) if item]
     return [*(message_out(item) for item in events), message_out(user_message), message_out(assistant_message)]
