@@ -48,6 +48,13 @@ CALC_III_SECTIONS = (
     ("14.5", "Surface Area", "Chapter 14 · Multiple Integration", 831, 838),
     ("14.6", "Volume Between Surfaces and Triple Integration", "Chapter 14 · Multiple Integration", 838, 860),
     ("14.7", "Triple Integration with Cylindrical and Spherical Coordinates", "Chapter 14 · Multiple Integration", 860, 872),
+    ("15.1", "Introduction to Line Integrals", "Chapter 15 · Vector Analysis", 873, 883),
+    ("15.2", "Vector Fields", "Chapter 15 · Vector Analysis", 883, 892),
+    ("15.3", "Line Integrals over Vector Fields", "Chapter 15 · Vector Analysis", 892, 902),
+    ("15.4", "Flow, Flux, Green’s Theorem and the Divergence Theorem", "Chapter 15 · Vector Analysis", 902, 912),
+    ("15.5", "Parametrized Surfaces and Surface Area", "Chapter 15 · Vector Analysis", 912, 924),
+    ("15.6", "Surface Integrals", "Chapter 15 · Vector Analysis", 924, 931),
+    ("15.7", "The Divergence Theorem and Stokes’ Theorem", "Chapter 15 · Vector Analysis", 931, 945),
 )
 ATTRIBUTION = "Source: APEX Calculus, 5th edition (2026), Gregory Hartman et al., CC BY-NC 4.0. https://www.apexcalculus.com"
 

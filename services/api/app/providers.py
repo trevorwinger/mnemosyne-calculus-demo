@@ -77,15 +77,17 @@ def demo_response(message: str) -> str:
             return r"Let’s practice partial derivatives. For \(f(x,y)=x^2y+3y^2\), which variable is held fixed when finding \(f_x\), and what is your first differentiation step?"
         if any(term in lowered for term in ("double integral", "triple integral", "multiple integration", "chapter 14", "volume")):
             return "Let’s practice a double integral setup. For the rectangle 0 ≤ x ≤ 2 and 1 ≤ y ≤ 4, what two bounds would you write for ∫∫_R (x+y) dA before evaluating?"
-        return "Let’s practice a Calc III idea. Choose one focus: sequences and series, parametric/polar curves, vectors, vector-valued functions, multivariable derivatives, or multiple integration. Which chapter are you working on?"
+        if any(term in lowered for term in ("line integral", "surface integral", "vector field", "flux", "green's theorem", "greens theorem", "stokes", "divergence theorem", "chapter 15")):
+            return "Let’s practice a vector-field setup. For F = ⟨x, y⟩ along the line from (0, 0) to (1, 1), what parametrization r(t) would preserve the path’s orientation before you evaluate a line integral?"
+        return "Let’s practice a Calc III idea. Choose one focus: sequences and series, parametric/polar curves, vectors, vector-valued functions, multivariable derivatives, multiple integration, or vector analysis. Which chapter are you working on?"
     if "array" in lowered or "length" in lowered:
         return "For an array loop, pause at the boundary: `length` is a count, while the last valid index is one less. Write down the first and last index your loop would try, then compare them with the array length. What condition are you using now?"
     if "loop" in lowered or "for" in lowered or "while" in lowered:
         return "A helpful way to trace a loop is to make a three-column table: starting value, condition result, and value after the update. Try the first two passes. At which pass do you expect the condition to become false?"
+    if any(term in lowered for term in ("partial", "gradient", "multivariable", "double integral", "triple integral", "parametric", "polar", "series", "sequence", "line integral", "surface integral", "vector field", "flux", "green's theorem", "greens theorem", "stokes", "divergence theorem")):
+        return "Start by naming the object and the goal: a sequence/series test, a curve representation, a multivariable derivative, an integral over a region, or a vector-field integral. Show the smallest setup you have, and I’ll help with one next step."
     if any(term in lowered for term in ("vector", "dot product", "cross product", "plane")):
         return "Start by identifying the kind of vector result you need: a scalar for a dot product, a perpendicular vector for a cross product, or a direction/normal vector for a line or plane. What information have you already labeled?"
-    if any(term in lowered for term in ("partial", "gradient", "multivariable", "double integral", "triple integral", "parametric", "polar", "series", "sequence")):
-        return "Start by naming the object and the goal: a sequence/series test, a curve representation, a multivariable derivative, or an integral over a region. Show the smallest setup you have, and I’ll help with one next step."
     return "I can help you reason through that. First, state the goal in your own words and show the smallest part you have tried. I’ll respond with one focused next step rather than a finished solution."
 
 async def generate(model: AvailableModel, messages: list[dict[str, str]]) -> tuple[str, int | None, int | None, int | None]:

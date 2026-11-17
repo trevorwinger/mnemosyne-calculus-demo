@@ -1,4 +1,11 @@
-from app.apex_preprocess import section_excerpt
+from app.apex_preprocess import CALC_III_SECTIONS, section_excerpt
+
+
+def test_calc_iii_source_set_includes_the_complete_vector_analysis_chapter():
+    chapter_15 = [record for record in CALC_III_SECTIONS if record[0].startswith("15.")]
+    assert [record[0] for record in chapter_15] == ["15.1", "15.2", "15.3", "15.4", "15.5", "15.6", "15.7"]
+    assert chapter_15[0][3:] == (873, 883)
+    assert chapter_15[-1][3:] == (931, 945)
 
 
 def test_apex_section_excerpt_removes_pdf_null_characters_and_keeps_three_examples():

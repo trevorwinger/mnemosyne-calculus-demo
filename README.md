@@ -59,7 +59,7 @@ The extracted PDF remains in `.local-content/` on the host, is copied into the p
 
 ## Textbook preprocessing
 
-The supplied **APEX Calculus, 5th edition (2026)** PDF is licensed [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Mnemosyne retains attribution and extracts the complete Chapters 9–14 Calc III source set—not the whole book:
+The supplied **APEX Calculus, 5th edition (2026)** PDF is licensed [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Mnemosyne retains attribution and extracts the complete Chapters 9–15 Calc III source set—not the whole book:
 
 - Sequences and series: §§9.1–9.8
 - Curves in the plane: §§10.1–10.5
@@ -67,6 +67,7 @@ The supplied **APEX Calculus, 5th edition (2026)** PDF is licensed [CC BY-NC 4.0
 - Vector-valued functions: §§12.1–12.5
 - Functions of several variables: §§13.1–13.8
 - Multiple integration: §§14.1–14.7
+- Vector analysis: §§15.1–15.7
 
 Each imported section includes its introduction and up to three worked-example samples, with stable citation chunks. The chat’s **Textbook focus** control scopes retrieval to a chapter category or all imported sections. The archive is retained only for local preprocessing; the original PDF is not exposed through the application.
 

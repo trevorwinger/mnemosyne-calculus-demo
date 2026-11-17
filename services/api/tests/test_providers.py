@@ -37,3 +37,10 @@ def test_demo_tutor_creates_a_fresh_chapter_practice_prompt():
 def test_demo_tutor_ignores_retrieval_excerpt_keywords():
     response = demo_response("15")
     assert "trace a loop" not in response.lower()
+
+
+def test_demo_tutor_handles_vector_analysis_practice_and_guidance():
+    practice = demo_response("Help me practice Chapter 15 line integrals")
+    guidance = demo_response("How should I begin this vector field flux problem?")
+    assert "parametrization" in practice
+    assert "vector-field integral" in guidance
