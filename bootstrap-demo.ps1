@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$Model = $(if ($env:MNEMOSYNE_MODEL) { $env:MNEMOSYNE_MODEL } else { "gemma4:e4b" })
+    [string]$Model = $(if ($env:MNEMOSYNE_MODEL) { $env:MNEMOSYNE_MODEL } else { "gemma4:e4b" }),
+    [switch]$IncludeLlama4Scout
 )
 
 $ErrorActionPreference = "Stop"
@@ -100,6 +101,11 @@ Wait-Http "http://localhost:11434/api/tags" 30
 Info "Pulling $Model (the first download can take several minutes)"
 & $ollama.Source pull $Model
 if ($LASTEXITCODE -ne 0) { throw "Ollama could not pull $Model." }
+if ($IncludeLlama4Scout -or $env:MNEMOSYNE_PULL_LLAMA4_SCOUT -eq "1") {
+    Info "Pulling llama4:scout (~67 GB; this can take a long time)"
+    & $ollama.Source pull "llama4:scout"
+    if ($LASTEXITCODE -ne 0) { throw "Ollama could not pull llama4:scout." }
+}
 
 New-Item -ItemType Directory -Force -Path $PrivateContent | Out-Null
 $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $Archive).Hash

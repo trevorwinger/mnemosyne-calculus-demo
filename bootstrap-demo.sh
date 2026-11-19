@@ -5,6 +5,7 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODEL_NAME="${MNEMOSYNE_MODEL:-gemma4:e4b}"
+PULL_LLAMA4_SCOUT="${MNEMOSYNE_PULL_LLAMA4_SCOUT:-0}"
 WEB_PORT="${MNEMOSYNE_WEB_PORT:-3200}"
 API_PORT="${MNEMOSYNE_API_PORT:-8200}"
 WEB_URL="http://localhost:$WEB_PORT"
@@ -91,7 +92,7 @@ ensure_docker() {
 
 case "${1:-}" in
   -h|--help)
-    printf 'Usage: ./bootstrap-demo.sh\n\nOptional environment variables:\n  MNEMOSYNE_MODEL=gemma4:e4b   Ollama model to pull and use\n  APEX_TEXTBOOK_PDF=/path/book.pdf   Use a local lawful APEX PDF instead of the bundled archive\n'
+    printf 'Usage: ./bootstrap-demo.sh\n\nOptional environment variables:\n  MNEMOSYNE_MODEL=gemma4:e4b          Ollama model to pull and use\n  MNEMOSYNE_PULL_LLAMA4_SCOUT=1       Also pull llama4:scout (~67 GB) for the chat model picker\n  APEX_TEXTBOOK_PDF=/path/book.pdf    Use a local lawful APEX PDF instead of the bundled archive\n'
     exit 0
     ;;
   "") ;;
@@ -128,6 +129,10 @@ curl --silent --fail --max-time 3 http://localhost:11434/api/tags >/dev/null 2>&
 
 info "Pulling $MODEL_NAME (the first download can take several minutes)"
 ollama pull "$MODEL_NAME"
+if [[ "$PULL_LLAMA4_SCOUT" == "1" ]]; then
+  info "Pulling llama4:scout (~67 GB; this can take a long time)"
+  ollama pull llama4:scout
+fi
 
 mkdir -p "$ROOT_DIR/.local-content"
 if [[ -n "${APEX_TEXTBOOK_PDF:-}" ]]; then

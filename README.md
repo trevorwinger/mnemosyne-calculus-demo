@@ -45,7 +45,7 @@ All launchers open [http://localhost:3200](http://localhost:3200) when ready. Th
 
 To choose different free ports, set `MNEMOSYNE_WEB_PORT` and `MNEMOSYNE_API_PORT` before launching. For example on macOS/Linux: `MNEMOSYNE_WEB_PORT=3300 MNEMOSYNE_API_PORT=8300 ./bootstrap-demo.sh`.
 
-Use a different Ollama model with `MNEMOSYNE_MODEL=model-name ./bootstrap-demo.sh`.
+Use a different Ollama model with `MNEMOSYNE_MODEL=model-name ./bootstrap-demo.sh`. To install Meta Llama 4 Scout as an additional model for the chat picker, run `MNEMOSYNE_PULL_LLAMA4_SCOUT=1 ./bootstrap-demo.sh` (or `./bootstrap-demo.ps1 -IncludeLlama4Scout` on Windows). Scout is an approximately 67 GB download, so it is opt-in; keep `gemma4:e4b` as the default for typical local machines.
 
 Ollama runs on the host rather than inside Docker, so it automatically uses supported host GPU acceleration (including Apple Metal) when a model is loaded. No Docker GPU passthrough is required.
 
