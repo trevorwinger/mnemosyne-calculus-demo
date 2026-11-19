@@ -6,7 +6,7 @@ from sqlalchemy import select
 from .db import SessionLocal
 from .config import settings
 from .ingestion import chunk_extracted_text, extract_upload, safe_storage_path
-from .models import BackgroundJob, ChatMessage, Concept, ConceptSummary, Course, CourseMaterial, ExerciseAttempt, LearningEvent, MaterialChunk, User
+from .models import BackgroundJob, ChatMessage, Concept, ConceptSummary, Course, CourseMaterial, ExerciseAttempt, LearningEvent, MaterialChunk, TutoringSession, User
 from .retention import learning_evidence_retention_days
 from .student_skills import write_student_skill_profile
 
@@ -50,7 +50,11 @@ def process(db, job):
         course, student = db.get(Course, course_id), db.get(User, student_id)
         if not course or not student: return
         observations = db.query(Concept.name, LearningEvent).join(Concept, Concept.id == LearningEvent.concept_id).filter(LearningEvent.student_id == student.id, LearningEvent.course_id == course.id, LearningEvent.forgotten_at.is_(None)).order_by(LearningEvent.created_at.desc()).all()
-        write_student_skill_profile(course, student.id, observations)
+        # The profile job receives the student's entire course conversation,
+        # not merely the latest evidence event. It still exports only safe,
+        # synthesized teaching moves back into a future model prompt.
+        chat_messages = db.query(ChatMessage).join(TutoringSession, TutoringSession.id == ChatMessage.session_id).filter(TutoringSession.user_id == student.id, TutoringSession.course_id == course.id).order_by(TutoringSession.created_at, ChatMessage.sequence).all()
+        write_student_skill_profile(course, student.id, observations, chat_messages)
         return
     if job.kind == "ingest_material":
         material = db.get(CourseMaterial, UUID(job.payload["material_id"]))

@@ -736,6 +736,10 @@ async def send_message(session_id: UUID, payload: SendMessage, request: Request,
     if session.title == "New tutoring session": session.title = payload.content.strip()[:80]
     db.add(ModelRun(session_id=session.id, request_message_id=user_message.id, response_message_id=assistant_message.id, provider=model.provider, model_identifier=model.name, model_digest=model.digest, harness_version=HARNESS_VERSION, latency_ms=latency, input_tokens=input_tokens, output_tokens=output_tokens, status="completed", run_metadata={"action": checked.action, "candidate_changed": checked.changed, "generation_attempts": generation_attempts, "reasoning_level": session.reasoning_level, "memory_enabled": session.memory_enabled, "memory_summary_ids": memory_summary_ids, "student_skill_profile_used": bool(skill_context), "material_scope": session.material_scope, "source_ids": [item["material_id"] for item in citations], "course_settings": {"learning_objectives": objectives, "prerequisites": prerequisites, "guidance": guidance}}))
     # Collection is mandatory for eligible evidence regardless of memory reads.
+    # Refresh after every completed pair so the profile can learn from the
+    # student's whole course conversation, including interactions that do not
+    # produce a formal concept event.
+    queue_student_skill_profile(db, user.id, session.course_id, f"chat:{assistant_message.id}")
     evidence = learning_evidence_candidate(payload.content) if relevance == "related" else None
     if evidence:
         db.add(BackgroundJob(kind="derive_learning_event", payload={"message_id": str(user_message.id), "student_id": str(user.id), "course_id": str(session.course_id), **evidence}, idempotency_key=f"learning-event:{user_message.id}"))
