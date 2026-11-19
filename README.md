@@ -6,7 +6,7 @@ Use this repository to let colleagues evaluate the student experience and attemp
 
 ## Quick start by operating system
 
-You need **Git** to clone the repository. Node.js is **not** required. The launchers install Docker and Ollama if they are absent, download `gemma4:12b`, verify/unpack the bundled textbook, build the local services, then open the demo. The first run needs several GB of free disk space and can take a while because Docker images and the model are downloaded.
+You need **Git** to clone the repository. Node.js is **not** required. The launchers install Docker and Ollama if they are absent, download `gemma4:e4b`, verify/unpack the bundled textbook, build the local services, then open the demo. The first run needs several GB of free disk space and can take a while because Docker images and the model are downloaded.
 
 ### macOS (Apple Silicon or Intel)
 
@@ -47,6 +47,8 @@ To choose different free ports, set `MNEMOSYNE_WEB_PORT` and `MNEMOSYNE_API_PORT
 
 Use a different Ollama model with `MNEMOSYNE_MODEL=model-name ./bootstrap-demo.sh`.
 
+Ollama runs on the host rather than inside Docker, so it automatically uses supported host GPU acceleration (including Apple Metal) when a model is loaded. No Docker GPU passthrough is required.
+
 The repository includes `assets/apex-calculus-5e.pdf.zip`, an unchanged copy of the textbook for this noncommercial prototype. It is covered by the included [textbook licensing notice](LICENSE-TEXTBOOK.md). The bootstrap script extracts it to the Git-ignored `.local-content/` folder, then preprocessing imports the selected Calc III sections and worked examples into the private Docker volume.
 
 To use a different lawfully obtained local APEX PDF instead:
@@ -80,6 +82,8 @@ The bootstrap configures Gemma as the standard tutor. Use **Refresh models** in 
 ## Shareable chat transcripts
 
 Every completed tutoring turn automatically refreshes one JSON transcript per chat session in the repository's local `chats/` directory. Messages include an explicit per-session sequence number, role, timestamp, citations, and session/course/model metadata, so the original conversational order is retained even when messages share a timestamp. These JSON files are intentionally Git-ignored: review and redact them before sending one to a colleague, then attach the relevant `chats/<session-id>.json` file to a follow-up or issue. The folder is mounted into the API container, so transcripts remain available after containers are restarted.
+
+When assessable learning evidence is recorded, the background worker also replaces one private, course-scoped student profile at `uploads/student-skills/<opaque-student-course-hash>_skill.md`. It uses only evidence-backed observations and safe tutoring strategies; it is never an answer key or a source of completed solutions. Each refresh writes a numbered, Git-ignored snapshot to `chats/skill-profiles/` for local audit, while private storage retains only the newest profile.
 
 ## Safety evaluation
 

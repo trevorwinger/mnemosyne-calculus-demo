@@ -17,6 +17,8 @@ class AvailableModel:
     provider: str
     approved: bool
     reason: str | None = None
+    thinking_values: tuple[bool | str, ...] = ()
+    thinking_default: bool | str | None = None
 
 model_semaphore = asyncio.Semaphore(max(1, settings.max_model_concurrency))
 
@@ -53,16 +55,46 @@ async def discover_models() -> list[AvailableModel]:
         async with httpx.AsyncClient(timeout=4) as client:
             response = await client.get(f"{settings.ollama_base_url.rstrip('/')}/api/tags")
             response.raise_for_status()
-        for item in response.json().get("models", []):
-            details = item.get("details") or {}
-            name = item.get("name", "")
-            approved, reason = model_approval(item.get("capabilities"))
-            results.append(AvailableModel(name, item.get("digest"), item.get("size"), details.get("parameter_size"), details.get("quantization_level"), "ollama", approved, reason))
+            for item in response.json().get("models", []):
+                details = item.get("details") or {}
+                name = item.get("name", "")
+                thinking_values: tuple[bool | str, ...] = ()
+                thinking_default: bool | str | None = None
+                try:
+                    show_response = await client.post(f"{settings.ollama_base_url.rstrip('/')}/api/show", json={"model": name})
+                    show_response.raise_for_status()
+                    thinking = show_response.json().get("thinking") or {}
+                    values = thinking.get("values")
+                    if isinstance(values, list):
+                        thinking_values = tuple(value for value in values if type(value) is bool or isinstance(value, str))
+                    default = thinking.get("default")
+                    if default in thinking_values and (type(default) is bool or isinstance(default, str)):
+                        thinking_default = default
+                except httpx.HTTPError:
+                    pass
+                approved, reason = model_approval(item.get("capabilities"))
+                results.append(AvailableModel(name, item.get("digest"), item.get("size"), details.get("parameter_size"), details.get("quantization_level"), "ollama", approved, reason, thinking_values, thinking_default))
     except httpx.HTTPError:
         pass
     if settings.demo_mode:
         results.append(AvailableModel("demo-tutor", "demo-v1", None, None, None, "demo", True, "Labeled deterministic demo provider."))
     return results
+
+def resolve_reasoning_level(model: AvailableModel, requested: bool | str | None) -> bool | str:
+    """Use a model-advertised thinking control, falling back to its default."""
+    values = model.thinking_values
+    if not values:
+        if requested in (None, False): return False
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{model.name} does not support adjustable reasoning.")
+    # Preserve the old no-reasoning behavior for new sessions whenever the
+    # selected model offers an explicit off setting.
+    if requested is None and False in values:
+        return False
+    if requested in values and (type(requested) is bool or isinstance(requested, str)):
+        return requested
+    if requested in (None, False) and model.thinking_default in values:
+        return model.thinking_default
+    raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"This reasoning level is not supported by {model.name}.")
 
 def demo_response(message: str) -> str:
     lowered = message.lower()
@@ -90,7 +122,7 @@ def demo_response(message: str) -> str:
         return "Start by identifying the kind of vector result you need: a scalar for a dot product, a perpendicular vector for a cross product, or a direction/normal vector for a line or plane. What information have you already labeled?"
     return "I can help you reason through that. First, state the goal in your own words and show the smallest part you have tried. I’ll respond with one focused next step rather than a finished solution."
 
-async def generate(model: AvailableModel, messages: list[dict[str, str]]) -> tuple[str, int | None, int | None, int | None]:
+async def generate(model: AvailableModel, messages: list[dict[str, str]], reasoning_level: bool | str = False) -> tuple[str, int | None, int | None, int | None]:
     started = time.perf_counter()
     async with model_semaphore:
         messages = bounded_messages(messages)
@@ -101,7 +133,7 @@ async def generate(model: AvailableModel, messages: list[dict[str, str]]) -> tup
             content = demo_response(messages[-1]["content"].split("\n\nReleased course excerpts", 1)[0])
             return content, round((time.perf_counter() - started) * 1000), None, None
         if not model.approved: raise HTTPException(status.HTTP_403_FORBIDDEN, "This installed model cannot generate chat responses.")
-        body = {"model": model.name, "stream": False, "think": False, "messages": [{"role": "system", "content": SYSTEM_POLICY}, *messages]}
+        body = {"model": model.name, "stream": False, "think": reasoning_level, "messages": [{"role": "system", "content": SYSTEM_POLICY}, *messages]}
         try:
             async with httpx.AsyncClient(timeout=settings.ollama_timeout_seconds) as client:
                 response = await client.post(f"{settings.ollama_base_url.rstrip('/')}/api/chat", json=body)

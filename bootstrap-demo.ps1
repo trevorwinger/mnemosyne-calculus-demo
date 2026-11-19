@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Model = $(if ($env:MNEMOSYNE_MODEL) { $env:MNEMOSYNE_MODEL } else { "gemma4:12b" })
+    [string]$Model = $(if ($env:MNEMOSYNE_MODEL) { $env:MNEMOSYNE_MODEL } else { "gemma4:e4b" })
 )
 
 $ErrorActionPreference = "Stop"

@@ -9,6 +9,7 @@ __pycache__/
 *.pyc
 uploads/
 chats/*.json
+chats/skill-profiles/
 !chats/.gitkeep
 test-results/
 .local-content/*

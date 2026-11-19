@@ -4,7 +4,7 @@
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MODEL_NAME="${MNEMOSYNE_MODEL:-gemma4:12b}"
+MODEL_NAME="${MNEMOSYNE_MODEL:-gemma4:e4b}"
 WEB_PORT="${MNEMOSYNE_WEB_PORT:-3200}"
 API_PORT="${MNEMOSYNE_API_PORT:-8200}"
 WEB_URL="http://localhost:$WEB_PORT"
@@ -91,7 +91,7 @@ ensure_docker() {
 
 case "${1:-}" in
   -h|--help)
-    printf 'Usage: ./bootstrap-demo.sh\n\nOptional environment variables:\n  MNEMOSYNE_MODEL=gemma4:12b   Ollama model to pull and use\n  APEX_TEXTBOOK_PDF=/path/book.pdf   Use a local lawful APEX PDF instead of the bundled archive\n'
+    printf 'Usage: ./bootstrap-demo.sh\n\nOptional environment variables:\n  MNEMOSYNE_MODEL=gemma4:e4b   Ollama model to pull and use\n  APEX_TEXTBOOK_PDF=/path/book.pdf   Use a local lawful APEX PDF instead of the bundled archive\n'
     exit 0
     ;;
   "") ;;
