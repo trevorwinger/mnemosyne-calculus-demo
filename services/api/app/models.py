@@ -66,6 +66,7 @@ class TutoringSession(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(240), default="New tutoring session")
     model_name: Mapped[str] = mapped_column(String(180), default="demo-tutor")
+    reasoning_level: Mapped[bool | str] = mapped_column(JSONB, default=False)
     memory_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     material_scope: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

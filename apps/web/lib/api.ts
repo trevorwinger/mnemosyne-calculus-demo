@@ -1,13 +1,14 @@
 export type Course = { id: string; title: string; course_code: string | null; description: string; term: string | null; status: string; allow_without_sources: boolean; role: "instructor" | "student" | null };
 export type TutoringPreferences = { guidance?: string; standard_tutor_model?: string; memory_enabled_default?: boolean; prerequisites?: string[]; learning_evidence_retention_days?: number | null } & Record<string, unknown>;
 export type CourseSettings = Course & { learning_objectives: string[]; tutoring_preferences: TutoringPreferences };
-export type Model = { name: string; digest: string | null; size: number | null; parameter_size: string | null; quantization: string | null; provider: string; approved: boolean; reason: string | null };
+export type ReasoningLevel = boolean | string;
+export type Model = { name: string; digest: string | null; size: number | null; parameter_size: string | null; quantization: string | null; provider: string; approved: boolean; reason: string | null; thinking_values: ReasoningLevel[]; thinking_default: ReasoningLevel | null };
 export type ModelProviderStatus = { reachable: boolean; approved_model_count: number; detail: string };
 export type IngestionCapabilities = { max_upload_mb: number; extensions: string[] };
 export type QueueStatus = { kind: string; status: string; count: number; oldest_created_at: string };
 export type SourceCitation = { material_id: string; title: string; location: string };
 export type ChatMessage = { id: string; role: "user" | "assistant" | "system"; content: string; created_at: string; citations: SourceCitation[] };
-export type TutoringSession = { id: string; course_id: string; title: string; model_name: string; memory_enabled: boolean; material_scope: { material_ids?: string[] }; created_at: string; updated_at: string };
+export type TutoringSession = { id: string; course_id: string; title: string; model_name: string; reasoning_level: ReasoningLevel; memory_enabled: boolean; material_scope: { material_ids?: string[] }; created_at: string; updated_at: string };
 export type SessionDetail = TutoringSession & { messages: ChatMessage[] };
 export type CourseSuggestion = { prompt: string; basis: string; material_title: string };
 export type Concept = { id: string; name: string; slug: string };

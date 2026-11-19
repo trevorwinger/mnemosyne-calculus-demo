@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
 
 class IdentityOut(BaseModel):
     id: UUID
@@ -84,6 +84,8 @@ class ModelOut(BaseModel):
     provider: str
     approved: bool
     reason: str | None
+    thinking_values: list[StrictBool | StrictStr] = Field(default_factory=list)
+    thinking_default: StrictBool | StrictStr | None = None
 
 class ModelProviderStatus(BaseModel):
     reachable: bool
@@ -254,6 +256,7 @@ class SessionCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str | None = Field(default=None, max_length=240)
     model_name: str | None = Field(default=None, max_length=180)
+    reasoning_level: StrictBool | StrictStr | None = None
     memory_enabled: bool | None = None
     material_ids: list[UUID] | None = None
 
@@ -262,6 +265,7 @@ class SessionOut(BaseModel):
     course_id: UUID
     title: str
     model_name: str
+    reasoning_level: StrictBool | StrictStr
     memory_enabled: bool
     material_scope: dict
     created_at: datetime
@@ -289,9 +293,15 @@ class SourceExcerpt(BaseModel):
 class SessionDetail(SessionOut):
     messages: list[MessageOut]
 
+class SessionSettingsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    model_name: str | None = Field(default=None, max_length=180)
+    reasoning_level: StrictBool | StrictStr
+
 class SendMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
     content: str = Field(min_length=1, max_length=12000)
     model_name: str | None = Field(default=None, max_length=180)
+    reasoning_level: StrictBool | StrictStr | None = None
     memory_enabled: bool | None = None
     material_ids: list[UUID] | None = None

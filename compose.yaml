@@ -44,7 +44,7 @@ services:
       APP_ENV: ${APP_ENV:-development}
     depends_on:
       api: { condition: service_healthy }
-    volumes: [private-uploads:/app/uploads, ./.local-content:/seed:ro]
+    volumes: [private-uploads:/app/uploads, ./.local-content:/seed:ro, ./chats:/app/chats]
 
   runner:
     build: ./services/runner

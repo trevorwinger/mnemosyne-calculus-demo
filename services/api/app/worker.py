@@ -6,13 +6,21 @@ from sqlalchemy import select
 from .db import SessionLocal
 from .config import settings
 from .ingestion import chunk_extracted_text, extract_upload, safe_storage_path
-from .models import BackgroundJob, ChatMessage, Concept, ConceptSummary, Course, CourseMaterial, ExerciseAttempt, LearningEvent, MaterialChunk
+from .models import BackgroundJob, ChatMessage, Concept, ConceptSummary, Course, CourseMaterial, ExerciseAttempt, LearningEvent, MaterialChunk, User
 from .retention import learning_evidence_retention_days
+from .student_skills import write_student_skill_profile
 
 def claim(db):
     job = db.scalar(select(BackgroundJob).where(BackgroundJob.status.in_(("pending", "retry")), BackgroundJob.available_at <= datetime.now(timezone.utc)).with_for_update(skip_locked=True).limit(1))
     if job: job.status, job.attempts, job.lease_until = "processing", job.attempts + 1, datetime.now(timezone.utc) + timedelta(seconds=30); db.commit()
     return job
+
+def queue_student_skill_profile(db, student_id, course_id, source_key):
+    """Coalesce a profile update for one observed learning event."""
+    key = f"student-skill-profile:{source_key}"[:200]
+    if not db.scalar(select(BackgroundJob.id).where(BackgroundJob.idempotency_key == key)):
+        db.add(BackgroundJob(kind="refresh_student_skill_profile", payload={"student_id": str(student_id), "course_id": str(course_id)}, idempotency_key=key))
+
 def process(db, job):
     if job.kind == "prune_learning_evidence":
         course = db.get(Course, UUID(job.payload["course_id"]))
@@ -30,10 +38,19 @@ def process(db, job):
             summary = db.query(ConceptSummary).filter_by(student_id=student_id, course_id=course.id, concept_id=concept_id).one_or_none()
             if not events:
                 if summary: db.delete(summary)
+                queue_student_skill_profile(db, student_id, course.id, f"retention:{course.id}:{student_id}:{cutoff.date().isoformat()}")
                 continue
             status = "Demonstrated independently" if any(event.independence == "independent" and event.result == "success" for event in events) else "Needs practice" if any(event.result == "needs_practice" for event in events) else "Practicing"
             if summary: summary.status, summary.recent_evidence_count, summary.version = status, len(events), summary.version + 1
             else: db.add(ConceptSummary(student_id=student_id, course_id=course.id, concept_id=concept_id, status=status, recent_evidence_count=len(events)))
+            queue_student_skill_profile(db, student_id, course.id, f"retention:{course.id}:{student_id}:{cutoff.date().isoformat()}")
+        return
+    if job.kind == "refresh_student_skill_profile":
+        student_id, course_id = UUID(job.payload["student_id"]), UUID(job.payload["course_id"])
+        course, student = db.get(Course, course_id), db.get(User, student_id)
+        if not course or not student: return
+        observations = db.query(Concept.name, LearningEvent).join(Concept, Concept.id == LearningEvent.concept_id).filter(LearningEvent.student_id == student.id, LearningEvent.course_id == course.id, LearningEvent.forgotten_at.is_(None)).order_by(LearningEvent.created_at.desc()).all()
+        write_student_skill_profile(course, student.id, observations)
         return
     if job.kind == "ingest_material":
         material = db.get(CourseMaterial, UUID(job.payload["material_id"]))
@@ -63,6 +80,7 @@ def process(db, job):
         status = "Practicing" if result == "success" else "Needs practice"
         if not summary: db.add(ConceptSummary(student_id=event.student_id, course_id=event.course_id, concept_id=event.concept_id, status=status, recent_evidence_count=1))
         else: summary.status, summary.recent_evidence_count, summary.version = status, summary.recent_evidence_count + 1, summary.version + 1
+        queue_student_skill_profile(db, event.student_id, event.course_id, f"attempt:{attempt.id}")
         return
     if job.kind not in {"derive_array_boundary_event", "derive_learning_event"}: return
     payload = job.payload; message = db.get(ChatMessage, UUID(payload["message_id"])); concept = db.scalar(select(Concept).where(Concept.course_id == UUID(payload["course_id"]), Concept.slug == payload.get("concept_slug", "array-boundaries")))
@@ -72,6 +90,7 @@ def process(db, job):
     status = "Demonstrated independently" if event.independence == "independent" and event.result == "success" else "Practicing" if event.result == "success" else "Needs practice"
     if not summary: summary = ConceptSummary(student_id=event.student_id, course_id=event.course_id, concept_id=event.concept_id, status=status, recent_evidence_count=1); db.add(summary)
     else: summary.status, summary.recent_evidence_count, summary.version = status, summary.recent_evidence_count + 1, summary.version + 1
+    queue_student_skill_profile(db, event.student_id, event.course_id, f"message:{message.id}")
 def run_once():
     db = SessionLocal()
     try:
